@@ -1,0 +1,81 @@
+import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
+import sqlite3
+
+
+class DatabaseApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Автоматизированная система учёта проблем")
+        self.setGeometry(100, 100, 400, 200)
+
+        # Создание элементов интерфейса
+        self.label_name = QLabel("Название:")
+        self.input_name = QLineEdit()
+
+        self.label_producer = QLabel("Производитель:")
+        self.input_producer = QLineEdit()
+
+        self.label_quantity = QLabel("Количество:")
+        self.input_quantity = QLineEdit()
+
+        self.button_add = QPushButton("Добавить")
+        self.button_close = QPushButton("Закрыть")
+
+        # Подключение кнопок к функциям
+        self.button_add.clicked.connect(self.add_to_database)
+        self.button_close.clicked.connect(self.close)
+
+        # Разметка
+        layout = QVBoxLayout()
+        layout.addWidget(self.label_name)
+        layout.addWidget(self.input_name)
+        layout.addWidget(self.label_producer)
+        layout.addWidget(self.input_producer)
+        layout.addWidget(self.label_quantity)
+        layout.addWidget(self.input_quantity)
+        layout.addWidget(self.button_add)
+        layout.addWidget(self.button_close)
+
+        self.setLayout(layout)
+
+        # Инициализация базы данных
+        self.init_db()
+
+    def init_db(self):
+        """Создание базы данных и таблицы, если их нет."""
+        self.conn = sqlite3.connect("construction_materials.db")
+        self.cursor = self.conn.cursor()
+        self.cursor.execute()
+        self.conn.commit()
+
+    def add_to_database(self):
+        """Добавление данных в базу."""
+        name = self.input_name.text()
+        producer = self.input_producer.text()
+        quantity = self.input_quantity.text()
+
+        if not name:
+            QMessageBox.warning(self, "Ошибка", "Поле 'Название' обязательно!")
+            return
+
+        try:
+            self.cursor.execute(name, producer, quantity)
+            self.conn.commit()
+            QMessageBox.information(self, "Успех", "Данные сохранены!")
+            self.input_name.clear()
+            self.input_producer.clear()
+            self.input_quantity.clear()
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Ошибка базы данных: {e}")
+
+    def closeEvent(self, event):
+        """Закрытие соединения с БД при выходе."""
+        self.conn.close()
+        event.accept()
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = DatabaseApp()
+    window.show()
+    sys.exit(app.exec_())
